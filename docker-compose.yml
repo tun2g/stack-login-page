@@ -1,0 +1,17 @@
+version: '2.3'
+
+
+services:
+  jarvis_kb_dashboard:
+    build: .
+    restart: 'unless-stopped'
+    ports:
+      - 6688:80
+    env_file:
+      - ./.env
+    networks:
+      - nest_networks
+
+networks:
+  nest_networks:
+    external: true
