@@ -1,36 +1,24 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { setClientId, setRedirectUrl } from "@/lib/utils/storage";
-import { useSearchParams } from "next/navigation";
-import { getToken, setRefreshToken, setToken } from "@/lib/utils/auth";
-import { useUser } from "@stackframe/stack";
+import { useEffect } from 'react';
+import { useUser } from '@stackframe/stack';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-const AuthGuard = ({ children }: { children: React.ReactNode }) => {
-  const search = useSearchParams();
+const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const user = useUser();
-  const isAuthenticatedBefore = !!getToken();
 
   useEffect(() => {
-    const redirectUrl = search.get("redirect");
-    const clientId = search.get("client_id");
+    const handleAuthentication = async () => {
+      if (!user) {
+        const params = new URLSearchParams(searchParams);
+        router.push(`/signin?${params.toString()}`);
+      }
+    };
 
-    if (redirectUrl && clientId) {
-      setClientId(clientId);
-      setRedirectUrl(redirectUrl);
-    }
-
-    if(!user){
-      window.location.href = '/signin';
-    }
-    else if(!isAuthenticatedBefore){
-      user.currentSession.getTokens().then((tokens)=>{
-        setToken(tokens.accessToken!);
-        setRefreshToken(tokens.refreshToken!);
-      })
-    }
-    
-  },[isAuthenticatedBefore]);
+    handleAuthentication();
+  }, [user, searchParams, router]);
 
   return <>{children}</>;
 };

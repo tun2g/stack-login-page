@@ -5,29 +5,28 @@ import axios, {
   AxiosResponse,
   HttpStatusCode,
   InternalAxiosRequestConfig,
-} from "axios";
+} from 'axios';
 
-import { appConfigs } from "../app-config";
+import { refresh } from '@/services/stack-auth.service';
 
-import { getRefreshToken, getToken, setToken } from "./auth";
-import { refresh } from "@/services/stack-auth.service";
+import { appConfigs } from '../app-config';
+
+import { getRefreshToken, getToken, setToken } from './auth';
 
 type StackAuthRequestHeaders = AxiosRequestHeaders & {
-  "X-Stack-Access-Type": "client" | "server";
-  "X-Stack-Project-Id": string;
-  "X-Stack-Publishable-Client-Key": string;
-  "X-Stack-Access-Token"?: string;
-  "X-Stack-Refresh-Token"?: string;
+  'X-Stack-Access-Type': 'client' | 'server';
+  'X-Stack-Project-Id': string;
+  'X-Stack-Publishable-Client-Key': string;
+  'X-Stack-Access-Token'?: string;
+  'X-Stack-Refresh-Token'?: string;
 };
 
 const instance = axios.create({
   baseURL: `${appConfigs.stack.apiUrl}`,
 });
 
-const requestAuthInterceptor = (
-  req: AxiosRequestConfig
-): InternalAxiosRequestConfig => {
-  if (req.url?.includes("/auth/refresh")) {
+const requestAuthInterceptor = (req: AxiosRequestConfig): InternalAxiosRequestConfig => {
+  if (req.url?.includes('/auth/refresh')) {
     return req as InternalAxiosRequestConfig;
   }
 
@@ -40,11 +39,11 @@ const requestAuthInterceptor = (
       headers: {
         ...req.headers,
         Authorization: `Bearer ${token}`,
-        "X-Stack-Access-Type": "client",
-        "X-Stack-Project-Id": appConfigs.stack.projectId,
-        "X-Stack-Publishable-Client-Key": appConfigs.stack.publishableClientKey,
-        "X-Stack-Access-Token": token,
-        ...(refreshToken && { "X-Stack-Refresh-Token": refreshToken }),
+        'X-Stack-Access-Type': 'client',
+        'X-Stack-Project-Id': appConfigs.stack.projectId,
+        'X-Stack-Publishable-Client-Key': appConfigs.stack.publishableClientKey,
+        'X-Stack-Access-Token': token,
+        ...(refreshToken && { 'X-Stack-Refresh-Token': refreshToken }),
       } as StackAuthRequestHeaders,
     };
   }
@@ -66,7 +65,7 @@ const responseAuthErrorInterceptor = async (error: AxiosError) => {
       try {
         const refreshResponse = await refresh();
 
-        const { accessToken } = refreshResponse.data.token;
+        const { access_token: accessToken } = refreshResponse.data;
 
         if (accessToken) {
           setToken(accessToken);
@@ -85,9 +84,6 @@ const responseAuthErrorInterceptor = async (error: AxiosError) => {
 };
 
 instance.interceptors.request.use(requestAuthInterceptor);
-instance.interceptors.response.use(
-  responseAuthInterceptor,
-  responseAuthErrorInterceptor
-);
+instance.interceptors.response.use(responseAuthInterceptor, responseAuthErrorInterceptor);
 
 export default instance;

@@ -1,32 +1,33 @@
-"use client";
+'use client';
 
-import AuthGuard from "@/components/auth/guard";
-import { getRefreshToken, getToken } from "@/lib/utils/auth";
-import { getClientId, getRedirectUrl, removeStorageKeys } from "@/lib/utils/storage";
-import { useEffect } from "react";
+import { useEffect } from 'react';
+import { AccountSettings, useUser } from '@stackframe/stack';
+import { useSearchParams } from 'next/navigation';
+
+import AuthGuard from '@/components/auth/guard';
+import { getClientId, getRedirectUrl, removeStorageKeys } from '@/lib/utils/storage';
 
 export default function Home() {
-  
-  useEffect(() => {
-    const redirectUrl = getRedirectUrl();
-    const clientId = getClientId();
-    
-    const token = getToken();
-    const refreshToken = getRefreshToken();
+  const search = useSearchParams();
+  const user = useUser();
 
-    if (redirectUrl && clientId && token) {
+  useEffect(() => {
+    const redirectUrl = getRedirectUrl() ?? search.get('redirect');
+    const clientId = getClientId() ?? search.get('client_id');
+
+    if (redirectUrl && clientId && user) {
       removeStorageKeys();
-      redirectUrl.includes("?")
-        ? (window.location.href = `${redirectUrl}&access_token=${token}&refresh_token=${refreshToken}`)
-        : (window.location.href = `${redirectUrl}?access_token=${token}&refresh_token=${refreshToken}`);
+      user.currentSession.getTokens().then((token) => {
+        redirectUrl.includes('?')
+          ? (window.location.href = `${redirectUrl}&access_token=${token.accessToken}&refresh_token=${token.refreshToken}`)
+          : (window.location.href = `${redirectUrl}?access_token=${token.accessToken}&refresh_token=${token.refreshToken}`);
+      });
     }
-  }, []);
+  }, [user]);
 
   return (
     <AuthGuard>
-      <div className="flex justify-center items-center min-h-screen">
-        Jarvis Account Page
-      </div>
+      <AccountSettings></AccountSettings>
     </AuthGuard>
   );
 }
